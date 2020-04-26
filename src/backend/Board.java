@@ -117,7 +117,7 @@ public class Board {
             } else {
                 int dstValue = dstCard.getValue();
                 int srcValue = srcCard.getValue();
-                move = (dst == Deck.TABLEAU && dstCard.getColor() != srcCard.getColor() && dstValue + 1 == srcValue) ||
+                move = (dst == Deck.TABLEAU && dstCard.getColor() != srcCard.getColor() && dstValue == srcValue + 1) ||
                         (dst == Deck.FOUNDATION && dstCard.getType() == srcCard.getType() && dstValue + 1 == srcValue);
             }
         }
