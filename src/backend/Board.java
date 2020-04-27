@@ -113,7 +113,8 @@ public class Board {
 
         if (srcCard != null) {
             if (dstCard == null) {
-                move = (dst == Deck.TABLEAU || (dst == Deck.FOUNDATION && srcCard.getValue() == 0));
+                move = ((dst == Deck.TABLEAU  && srcCard.getValue() == Card.MAX_VALUE - 1) ||
+                        (dst == Deck.FOUNDATION && srcCard.getValue() == 0));
             } else {
                 int dstValue = dstCard.getValue();
                 int srcValue = srcCard.getValue();
