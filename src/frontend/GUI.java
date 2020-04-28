@@ -123,7 +123,7 @@ public class GUI extends JPanel implements Runnable {
 
     @Override
     public void run() {
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("Solitaire");
         frame.setSize(700, 650);
         frame.setDefaultCloseOperation(WindowConstants. EXIT_ON_CLOSE);
         frame.add(this);
