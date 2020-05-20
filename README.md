@@ -10,7 +10,7 @@ Compile the game by `cd`ing into the `src` directory and running:
 ```
 javac -d [output directory] Main.java backend/*.java frontend/*.java;
 ```
-Start the game after compilation by `cd`ing into the output directory running:
+Start the game after compilation by `cd`ing into the output directory and running:
 ```
 java Main;
 ```
