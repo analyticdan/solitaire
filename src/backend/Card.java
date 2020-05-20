@@ -7,6 +7,7 @@ import static java.awt.Color.BLACK;
 
 public class Card {
 
+    /* Cards go from A, 2, ..., 10, J, Q, K. */
     static final int MAX_VALUE = 13;
 
     public enum Type {
