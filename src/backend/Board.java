@@ -97,21 +97,39 @@ public class Board {
     }
 
     public boolean isTableauCardMovable(int column, int row) {
-        Card[] cards = this.getTableauCards(column);
-
-        Card card = cards[row];
-        if (card == null) {
-            return false;
-        }
-        CardType type = card.getType();
-        CardValue value = card.getValue().prev();
-        for (int k = row + 1; k < cards.length; k += 1) {
-            Card nextCard = cards[k];
-            if (value == null || nextCard.getType() != type || nextCard.getValue() != value) {
-                return false;
-            }
-            value = value.prev();
-        }
-        return true;
+        return this.tableau[column].isMovableFrom(row);
     }
+
+    public boolean isMovableToFoundation(Card card, int foundation) {
+        Card foundationCard = this.foundation[foundation];
+        if (foundationCard == null) {
+            return card.getValue() == CardValue.A;
+        } else {
+            return card.getType() == foundationCard.getType() && card.getValue() == foundationCard.getValue().next();
+        }
+    }
+
+    public void moveFromWasteToFoundation(int waste, int foundation) {
+        Card wasteCard = this.waste[waste];
+        if (wasteCard == null) {
+            return;
+        }
+        if (this.isMovableToFoundation(wasteCard, foundation)) {
+            this.foundation[foundation] = wasteCard;
+            this.waste[waste] = null;
+        }
+    }
+
+    public void moveFromTableauToFoundation(int column, int row, int foundation) {
+        Card[] tableauColumn = this.tableau[column].getView();
+        if (tableauColumn.length - 1 != row) {
+            return;
+        }
+        Card tableauCard = tableauColumn[row];
+        if (this.isMovableToFoundation(tableauCard, foundation)) {
+            this.foundation[foundation] = tableauCard;
+            this.tableau[column].removeFrom(row);
+        }
+    }
+
 }

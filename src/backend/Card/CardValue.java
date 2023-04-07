@@ -33,7 +33,7 @@ public enum CardValue {
         if (this == KING) {
             return null;
         } else {
-            return CardValue.values()[this.ordinal() - 1];
+            return CardValue.values()[this.ordinal() + 1];
         }
     }
 
