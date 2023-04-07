@@ -1,6 +1,7 @@
 package backend;
 
 import backend.Card.Card;
+import backend.Card.CardValue;
 
 import java.util.LinkedList;
 
@@ -19,13 +20,5 @@ public class CardColumn {
             view[this.hiddenCards.size() + i] = this.revealedCards.get(i);
         }
         return view;
-    }
-
-    public Card getCard(int i) {
-        if (i < this.hiddenCards.size()) {
-            return null;
-        } else {
-            return this.revealedCards.get(i - this.hiddenCards.size());
-        }
     }
 }

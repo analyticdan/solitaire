@@ -4,9 +4,7 @@ import backend.Card.Card;
 import backend.Card.CardType;
 import backend.Card.CardValue;
 
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 public class Board {
@@ -94,11 +92,26 @@ public class Board {
         return this.foundation[i];
     }
 
-    public Card[] getTableauCards(int i) {
-        return this.tableau[i].getView();
+    public Card[] getTableauCards(int column) {
+        return this.tableau[column].getView();
     }
 
-    public Card getTableauCard(int i, int j) {
-        return this.tableau[i].getCard(j);
+    public boolean isTableauCardMovable(int column, int row) {
+        Card[] cards = this.getTableauCards(column);
+
+        Card card = cards[row];
+        if (card == null) {
+            return false;
+        }
+        CardType type = card.getType();
+        CardValue value = card.getValue().prev();
+        for (int k = row + 1; k < cards.length; k += 1) {
+            Card nextCard = cards[k];
+            if (value == null || nextCard.getType() != type || nextCard.getValue() != value) {
+                return false;
+            }
+            value = value.prev();
+        }
+        return true;
     }
 }

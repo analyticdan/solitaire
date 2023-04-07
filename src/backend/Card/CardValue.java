@@ -21,6 +21,22 @@ public enum CardValue {
         this.string = string;
     }
 
+    public CardValue prev() {
+        if (this == A) {
+            return null;
+        } else {
+            return CardValue.values()[this.ordinal() - 1];
+        }
+    }
+
+    public CardValue next() {
+        if (this == KING) {
+            return null;
+        } else {
+            return CardValue.values()[this.ordinal() - 1];
+        }
+    }
+
     @Override
     public String toString() {
         return this.string;
