@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
+import java.util.Arrays;
 
 import static backend.Board.TABLEAU_SIZE;
 import static backend.Board.WASTE_SIZE;
@@ -30,9 +31,9 @@ public class GUI extends JPanel implements Runnable {
     private Rectangle2D stock;
     private Rectangle2D[] waste;
     private Rectangle2D[] foundation;
-    private Rectangle2D[] tableau;
+    private Rectangle2D[][] tableau;
 
-    private Card selectedCard;
+    private Card[] selectedCards;
     private double offsetX;
     private double offsetY;
 
@@ -42,7 +43,7 @@ public class GUI extends JPanel implements Runnable {
 
         this.waste = new Rectangle2D[WASTE_SIZE];
         this.foundation = new Rectangle2D[CardType.values().length];
-        this.tableau = new Rectangle2D[TABLEAU_SIZE];
+        this.tableau = new Rectangle2D[TABLEAU_SIZE][];
 
         this.addComponentListener(new ComponentAdapter() {
             @Override
@@ -73,16 +74,6 @@ public class GUI extends JPanel implements Runnable {
                     foundation[i] = new Rectangle2D.Double(x + deltaX, y, cardWidth, cardHeight);
                     deltaX += cardWidth + marginWidth;
                 }
-
-                // Recalculate position of base of tableau cards.
-                x = cardWidth + 2 * marginWidth;
-                y = cardHeight + 2 * marginHeight;
-                deltaX = 0;
-                for (int i = 0; i < tableau.length; i += 1) {
-                    tableau[i] = new Rectangle2D.Double(x + deltaX, y, cardWidth, cardHeight);
-                    deltaX += cardWidth + marginWidth;
-                }
-
             }
         });
         this.addMouseListener(new MouseAdapter() {
@@ -95,24 +86,39 @@ public class GUI extends JPanel implements Runnable {
                 }
                 for (int i = waste.length - 1; i >= 0; i -= 1) {
                     if (waste[i].contains(point)) {
-                        selectedCard = board.getWasteCard(i);
+                        selectedCards = new Card[]{ board.getWasteCard(i) };
                         offsetX = point.getX() - waste[i].getX();
                         offsetY = point.getY() - waste[i].getY();
                         return;
                     }
                 }
 
+                for (int i = tableau.length - 1; i >= 0; i -= 1) {
+                    Rectangle2D[] column = tableau[i];
+                    for (int j = column.length - 1; j >= 0; j -= 1) {
+                        Card[] cards = board.getTableauCards(i);
+                        if (cards[j] == null) {
+                            break;
+                        }
+                        if (column[j].contains(point)) {
+                            selectedCards = Arrays.copyOfRange(cards, j, cards.length);
+                            offsetX = point.getX() - column[j].getX();
+                            offsetY = point.getY() - column[j].getY();
+                            return;
+                        }
+                    }
+                }
             }
             @Override
             public void mouseReleased(MouseEvent e) {
-                selectedCard = null;
+                selectedCards = null;
                 repaint();
             }
         });
         this.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
-                if (selectedCard != null) {
+                if (selectedCards != null) {
                     repaint();
                 }
             }
@@ -140,6 +146,10 @@ public class GUI extends JPanel implements Runnable {
         this.drawSelectedCard(g2d);
     }
 
+    private boolean isSelectedCard(Card card) {
+        return this.selectedCards != null && card == this.selectedCards[0];
+    }
+
     private void drawStock(Graphics2D g2d) {
         if (this.board.isStockEmpty()) {
             this.drawPlaceholder(g2d, this.stock);
@@ -151,7 +161,7 @@ public class GUI extends JPanel implements Runnable {
     private void drawWaste(Graphics2D g2d) {
         for (int i = 0; i < this.waste.length; i += 1) {
             Card card = this.board.getWasteCard(i);
-            if (card != null && card != this.selectedCard) {
+            if (card != null && !isSelectedCard(card)) {
                 this.drawCard(g2d, waste[i], card);
             }
         }
@@ -169,32 +179,40 @@ public class GUI extends JPanel implements Runnable {
     }
 
     private void drawTableau(Graphics2D g2d) {
+        double x = cardWidth + 2 * marginWidth;
+        double y = cardHeight + 2 * marginHeight;
+        double deltaX = 0;
         for (int i = 0; i < this.tableau.length; i += 1) {
-            Card[] tableauColumnCards = this.board.getTableauColumnCards(i);
-            if (tableauColumnCards.length == 0) {
-                this.drawPlaceholder(g2d, this.tableau[i]);
-                return;
-            }
-            double x = this.tableau[i].getX();
-            double y = this.tableau[i].getY();
+            Card[] cards = this.board.getTableauCards(i);
+            Rectangle2D[] column = new Rectangle2D[cards.length];
             double deltaY = 0;
-            for (Card tableauColumnCard : tableauColumnCards) {
-                if (this.selectedCard == null ||  this.selectedCard != tableauColumnCard) {
-                    Rectangle2D r = new Rectangle2D.Double(x, y + deltaY, this.cardWidth, this.cardHeight);
-                    this.drawCard(g2d, r, tableauColumnCard);
+            for (int j = 0; j < cards.length; j += 1) {
+                Rectangle2D r = new Rectangle2D.Double(x + deltaX, y + deltaY, this.cardWidth, this.cardHeight);
+                Card card = cards[j];
+                if (isSelectedCard((card))) {
+                    break;
+                } else {
+                    this.drawCard(g2d, r, card);
                 }
+                column[j] = r;
                 deltaY += this.marginHeight;
             }
+            this.tableau[i] = column;
+            deltaX += this.cardWidth + this.marginWidth;
         }
     }
 
     private void drawSelectedCard(Graphics2D g2d) {
-        if (this.selectedCard != null) {
+        if (this.selectedCards != null) {
             Point point = this.getMousePosition();
             double x = point.getX() - this.offsetX;
             double y = point.getY() - this.offsetY;
-            Rectangle2D r = new Rectangle2D.Double(x, y, this.cardWidth, this.cardHeight);
-            drawCard(g2d, r, selectedCard);
+            double deltaY = 0;
+            for (Card selectedCard : this.selectedCards) {
+                Rectangle2D r = new Rectangle2D.Double(x, y + deltaY, this.cardWidth, this.cardHeight);
+                drawCard(g2d, r, selectedCard);
+                deltaY += marginHeight;
+            }
         }
     }
 

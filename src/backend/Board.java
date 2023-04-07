@@ -94,7 +94,11 @@ public class Board {
         return this.foundation[i];
     }
 
-    public Card[] getTableauColumnCards(int i) {
+    public Card[] getTableauCards(int i) {
         return this.tableau[i].getView();
+    }
+
+    public Card getTableauCard(int i, int j) {
+        return this.tableau[i].getCard(j);
     }
 }

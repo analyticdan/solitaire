@@ -20,4 +20,12 @@ public class CardColumn {
         }
         return view;
     }
+
+    public Card getCard(int i) {
+        if (i < this.hiddenCards.size()) {
+            return null;
+        } else {
+            return this.revealedCards.get(i - this.hiddenCards.size());
+        }
+    }
 }
