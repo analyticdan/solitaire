@@ -23,9 +23,8 @@ public class Board {
     private Card[] foundation;
 
     /* The tableau is the main grid of cards that are still in play.  */
-    private LinkedList<Card>[] tableau;
+    private CardColumn[] tableau;
 
-    @SuppressWarnings("unchecked")
     public Board() {
         /* Initialize a shuffled deck of cards. */
     	LinkedList<Card> deck = new LinkedList<>();
@@ -40,12 +39,15 @@ public class Board {
         this.foundation = new Card[CardType.values().length];
 
         /* Deal out cards to the tableau from the deck. */
-        this.tableau = new LinkedList[TABLEAU_SIZE];
+        this.tableau = new CardColumn[TABLEAU_SIZE];
         for (int i = 0; i < this.tableau.length; i += 1) {
-            this.tableau[i] = new LinkedList<>();
-            for (int j = 0; j < i + 1; j += 1) {
-                this.tableau[i].push(deck.pop());
+            LinkedList<Card> hiddenCards = new LinkedList<>();
+            LinkedList<Card> revealedCards = new LinkedList<>();
+            for (int j = 0; j < i; j += 1) {
+                hiddenCards.push(deck.pop());
             }
+            revealedCards.push(deck.pop());
+            tableau[i] = new CardColumn(hiddenCards, revealedCards);
         }
 
         /* Initialize the stock with the remaining cards from the deck, adding a null-terminator. */
@@ -92,4 +94,7 @@ public class Board {
         return this.foundation[i];
     }
 
+    public Card[] getTableauColumnCards(int i) {
+        return this.tableau[i].getView();
+    }
 }
