@@ -9,6 +9,10 @@ public class Card {
         this.value = value;
     }
 
+    public CardColor getColor() {
+        return this.type.getColor();
+    }
+
     public CardType getType() {
         return this.type;
     }

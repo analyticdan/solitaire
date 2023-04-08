@@ -5,6 +5,8 @@ import backend.Card.Card;
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
 
+import static backend.Card.CardColor.BLACK;
+
 public class Utils {
     static public final Color BACKGROUND_COLOR = Color.WHITE;
     static public final Color OUTLINE_COLOR = Color.GRAY;
@@ -36,15 +38,6 @@ public class Utils {
     }
 
     static public Color getColor(Card card) {
-        switch (card.getType()) {
-            case HEART:
-            case DIAMOND:
-                return Color.RED;
-            case CLUB:
-            case SPADE:
-                return Color.BLACK;
-            default:
-                return null;
-        }
+        return card.getColor() == BLACK ? Color.BLACK : Color.RED;
     }
 }

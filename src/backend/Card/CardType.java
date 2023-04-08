@@ -1,12 +1,21 @@
 package backend.Card;
 
-public enum CardType {
-    HEART("♥"), DIAMOND("♦"), CLUB("♣"), SPADE("♠");
+import static backend.Card.CardColor.BLACK;
+import static backend.Card.CardColor.RED;
 
+public enum CardType {
+    CLUB(BLACK, "♣"), DIAMOND(RED, "♦"), HEART(RED, "♥"), SPADE(BLACK, "♠");
+
+    private final CardColor color;
     private final String string;
 
-    CardType(String string) {
+    CardType(CardColor color, String string) {
+        this.color = color;
         this.string = string;
+    }
+
+    CardColor getColor() {
+        return this.color;
     }
 
     @Override

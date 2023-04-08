@@ -1,8 +1,6 @@
 package backend;
 
 import backend.Card.Card;
-import backend.Card.CardType;
-import backend.Card.CardValue;
 
 import java.util.LinkedList;
 
@@ -15,8 +13,12 @@ public class CardColumn {
         this.revealedCards = revealedCards;
     }
 
-    public int getSize() {
-        return this.hiddenCards.size() + this.revealedCards.size();
+    public Card getCard(int i) {
+        int j = this.hiddenCards.size() - i;
+        if (j < 0 || j >= this.revealedCards.size()) {
+            return null;
+        }
+        return this.revealedCards.get(j);
     }
 
     public Card[] getView() {
@@ -27,35 +29,25 @@ public class CardColumn {
         return view;
     }
 
-    public boolean isMovableFrom(int i) {
-        int j = i - this.hiddenCards.size();
-
-        if (j < 0) {
-            return false;
+    public Card peek() {
+        if (this.revealedCards.size() == 0) {
+            return null;
         }
-
-        Card start = this.revealedCards.get(j);
-        CardType type = start.getType();
-        CardValue value = start.getValue();
-        for (int k = j + 1; k < this.revealedCards.size(); k += 1) {
-            Card card = this.revealedCards.get(k);
-            if (card.getType() != type || card.getValue().next() != value) {
-                return false;
-            }
-            value = card.getValue().next();
-        }
-        return true;
+        return this.revealedCards.getLast();
     }
 
-    public void removeFrom(int i) {
-        int j = i - this.hiddenCards.size();
-
-        while (this.revealedCards.size() > j) {
-            this.revealedCards.removeLast();
+    public Card pop() {
+        if (this.revealedCards.size() == 0) {
+            return null;
         }
-
+        Card result = this.revealedCards.removeLast();
         if (this.revealedCards.size() == 0 && this.hiddenCards.size() != 0) {
             this.revealedCards.push(this.hiddenCards.pop());
         }
+        return result;
+    }
+
+    public void push(Card card) {
+        this.revealedCards.addLast(card);
     }
 }
