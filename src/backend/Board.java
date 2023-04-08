@@ -1,194 +1,168 @@
 package backend;
 
-import java.util.Arrays;
+import backend.Card.Card;
+import backend.Card.CardType;
+import backend.Card.CardValue;
+
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedList;
 
 public class Board {
+    public static final int TABLEAU_SIZE = 7;
+    public static final int WASTE_SIZE = 3;
 
-	/* Stock cards (face down cards in the upper left corner).
-	   After removing cards from curStock, add them back to nextStock.
-	   When curStock is empty, switch to nextStock.
+    /* Stock cards are the face down cards in the upper left corner. */
+    private LinkedList<Card> stock;
 
-	   Using two stocks allows us to have an empty deck when we reveal
-	   the last three stock cards without needing filler cards. */
-    private LinkedList<Card> curStock;
-    private LinkedList<Card> nextStock;
-
-    /* Tableaus (the bottom row of cards, which are prepopulated). */
-    private LinkedList<Card>[] tableau;
-
-    /* Waste cards (the up-to three cards revealed from the stock). */
+    /* Waste cards are the (up-to) three revealed cards from the stock. */
     private Card[] waste;
 
-    /* Foundation cards (the four piles representing cards which are done). */
+    /* Foundation cards are the four "finished" piles in the top right corner. */
     private Card[] foundation;
 
-    /* A Deck class, which provides helpful constants. */
-    public enum Deck {
-        STOCK(0), TABLEAU(7), WASTE(3), FOUNDATION(4);
+    /* The tableau is the main grid of cards that are still in play. */
+    private CardColumn[] tableau;
 
-        private int length;
-
-        Deck(int length) {
-            this.length = length;
-        }
-
-        public int size() {
-            return this.length;
-        }
-    }
-
-    /** Initializes a Solitaire board. */
-    @SuppressWarnings("unchecked")
     public Board() {
-    	/* Initialize stock to be a shuffled 52-card deck. */
-        this.curStock = new LinkedList<>();
-        this.nextStock = new LinkedList<>();
-        for (Card.Type type : Card.Type.values()) {
-            for (int value = 0; value < Card.MAX_VALUE; value += 1) {
-                curStock.push(new Card(type, value));
+        /* Initialize a shuffled deck of cards. */
+        LinkedList<Card> deck = new LinkedList<>();
+        for (CardType type : CardType.values()) {
+            for (CardValue value : CardValue.values()) {
+                deck.push(new Card(type, value));
             }
         }
-        Collections.shuffle(this.curStock);
+        Collections.shuffle(deck);
 
-        /* Deal out cards to the tableau from the stock. */
-        this.tableau = new LinkedList[Deck.TABLEAU.size()];
-        for (int i = 0; i < Deck.TABLEAU.size(); i += 1) {
-            this.tableau[i] = new LinkedList<>();
-            for (int j = 0; j < i + 1; j += 1) {
-                this.tableau[i].push(this.curStock.pop());
+        /* Initialize an empty foundation. */
+        this.foundation = new Card[CardType.values().length];
+
+        /* Deal out cards to the tableau from the deck. */
+        this.tableau = new CardColumn[TABLEAU_SIZE];
+        for (int i = 0; i < this.tableau.length; i += 1) {
+            LinkedList<Card> hiddenCards = new LinkedList<>();
+            LinkedList<Card> revealedCards = new LinkedList<>();
+            for (int j = 0; j < i; j += 1) {
+                hiddenCards.push(deck.pop());
             }
-            this.tableau[i].getLast().setRevealed(true);
+            revealedCards.push(deck.pop());
+            tableau[i] = new CardColumn(hiddenCards, revealedCards);
         }
 
-        /* Initialize an empty waste and foundation. */
-        this.waste = new Card[Deck.WASTE.size()];
-        this.foundation = new Card[Deck.FOUNDATION.size()];
+        /*
+         * Initialize the stock with the remaining cards from the deck, adding a
+         * null-terminator.
+         */
+        this.stock = deck;
+        this.stock.addLast(null);
+
+        /* Initialize an empty waste. */
+        this.waste = new Card[WASTE_SIZE];
     }
 
-    /** Returns true iff curStock is empty. */
-    public boolean isCurrentStockEmpty() {
-        return this.curStock.isEmpty();
-    }
-
-    /** Returns an iterator for the tableaus,
-        starting from the leftmost tableau. */
-    public Iterator<Card> getTableauIterator(int i) {
-        return this.tableau[i].listIterator(0);
-    }
-
-    /** Returns the last card of the i-th tableau from the left. */
-    public Card getTableau(int i) {
-        return this.tableau[i].getLast();
-    }
-
-    /** Returns an iterator that iterates through the waste
-        from left to right. */
-    public Iterator<Card> getWasteIterator() {
-        return Arrays.stream(this.waste).iterator();
-    }
-
-    /** Returns the i-th waste card from the left. */
-    public Card getWaste(int i) {
-        return this.waste[i];
-    }
-
-    /** Returns an iterator that iterates through the top card
-        of each foundation pile, from left to right. */
-    public Iterator<Card> getFoundationIterator() {
-        return Arrays.stream(this.foundation).iterator();
-    }
-
-    /** Returns the top card of the i-th foundation pile from the left. */
-    public Card getFoundation(int i) {
-        return this.foundation[i];
-    }
-
-    /** Puts the current waste cards back into the stock.
-        Then, takes up to three cards from the stock to
-        repopulate the waste. */
-    public void revealStock() {
-        Card card;
-
-        /* Push waste cards onto nextStock. */
-        for (int i = 0; i < Deck.WASTE.size(); i += 1) {
-            card = this.waste[i];
-            if (card != null) {
-                card.setRevealed(false);
-                this.nextStock.addLast(card);
+    /**
+     * Put the current waste cards at the end of the stock.
+     * Then:
+     * - if the next element of the stock is null, put the null-terminator at the
+     * end of the stock.
+     * - if the next element of the stock is not null, pop up to three elements from
+     * the stock onto the waste.
+     */
+    public void iterateStock() {
+        for (int i = 0; i < this.waste.length; i += 1) {
+            Card wasteCard = this.waste[i];
+            if (wasteCard != null) {
+                this.stock.addLast(wasteCard);
             }
             this.waste[i] = null;
         }
 
-        /* If curStock is empty, swap it with nextStock. */
-        if (this.curStock.isEmpty()) {
-            LinkedList<Card> tmp = this.curStock;
-            this.curStock = this.nextStock;
-            this.nextStock = tmp;
-        }
-
-        /* Put three cards into the waste pile. */
-        for (int i = 0; i < Deck.WASTE.size() && !this.curStock.isEmpty(); i += 1) {
-            card = this.curStock.removeFirst();
-            card.setRevealed(true);
-            this.waste[i] = card;
+        if (this.stock.peekFirst() == null) {
+            this.stock.addLast(this.stock.removeFirst());
+        } else {
+            for (int i = 0; i < this.waste.length && this.stock.peekFirst() != null; i += 1) {
+                this.waste[i] = this.stock.removeFirst();
+            }
         }
     }
 
-    /** Moves the top card a tableau row or a waste card to
-        either a tableau row or a foundation pile. */
-    public void move(Deck src, int srcIndex, Deck dst, int dstIndex) {
-        assert src == Deck.TABLEAU ^ src == Deck.WASTE;
-        assert dst == Deck.TABLEAU ^ dst == Deck.FOUNDATION;
-        assert srcIndex >= 0 && srcIndex <= src.size();
-        assert dstIndex >= 0 && dstIndex <= dst.size();
-
-        Card srcCard = this.getCard(src, srcIndex);
-        Card dstCard = this.getCard(dst, dstIndex);
-        boolean move = false;
-
-        if (srcCard != null) {
-            if (dstCard == null) {
-                move = ((dst == Deck.TABLEAU  && srcCard.getValue() == Card.MAX_VALUE - 1) ||
-                        (dst == Deck.FOUNDATION && srcCard.getValue() == 0));
-            } else {
-                int dstValue = dstCard.getValue();
-                int srcValue = srcCard.getValue();
-                move = (dst == Deck.TABLEAU && dstCard.getColor() != srcCard.getColor() && dstValue == srcValue + 1) ||
-                        (dst == Deck.FOUNDATION && dstCard.getType() == srcCard.getType() && dstValue + 1 == srcValue);
-            }
-        }
-
-        if (move) {
-            if (src == Deck.TABLEAU) {
-                this.tableau[srcIndex].removeLast();
-                if (!this.tableau[srcIndex].isEmpty()) {
-                    this.tableau[srcIndex].getLast().setRevealed(true);
-                }
-            } else {
-                this.waste[srcIndex] = null;
-            }
-
-            if (dst == Deck.TABLEAU) {
-                this.tableau[dstIndex].addLast(srcCard);
-            } else {
-                this.foundation[dstIndex] = srcCard;
-            }
-        }
-
+    public boolean isStockEmpty() {
+        return this.stock.peekFirst() == null;
     }
 
-    /* Returns the top i-th from the left card from DECK. */
-    private Card getCard(Deck deck, int i) {
-        if (deck == Deck.TABLEAU) {
-            return this.tableau[i].isEmpty() ? null : this.tableau[i].getLast();
-        } else if (deck == Deck.FOUNDATION) {
-            return this.foundation[i];
-        } else if (deck == Deck.WASTE) {
-            return this.waste[i];
-        }
-        return null;
+    public Card getWasteCard(int i) {
+        return this.waste[i];
     }
+
+    public Card getFoundationCard(int i) {
+        return this.foundation[i];
+    }
+
+    public Card[] getTableauCards(int column) {
+        return this.tableau[column].getView();
+    }
+
+    public Card getTableauCard(int column, int row) {
+        return this.tableau[column].getCard(row);
+    }
+
+    public boolean isMovableToFoundation(Card card, int foundation) {
+        Card foundationCard = this.foundation[foundation];
+        if (foundationCard == null) {
+            return card.getValue() == CardValue.A;
+        } else {
+            return card.getType() == foundationCard.getType() && card.getValue() == foundationCard.getValue().next();
+        }
+    }
+
+    public void moveFromWasteToFoundation(int waste, int foundation) {
+        Card wasteCard = this.waste[waste];
+        if (wasteCard == null) {
+            return;
+        }
+        if (this.isMovableToFoundation(wasteCard, foundation)) {
+            this.foundation[foundation] = wasteCard;
+            this.waste[waste] = null;
+        }
+    }
+
+    public void moveFromTableauToFoundation(int column, int foundation) {
+        Card tableauCard = this.tableau[column].peek();
+        if (tableauCard == null) {
+            return;
+        }
+        if (this.isMovableToFoundation(tableauCard, foundation)) {
+            this.foundation[foundation] = this.tableau[column].pop();
+        }
+    }
+
+    public boolean isMovableToTableau(Card card, int column) {
+        Card tableauCard = this.tableau[column].peek();
+        if (tableauCard == null) {
+            return true;
+        } else {
+            return card.getColor() != tableauCard.getColor();
+        }
+    }
+
+    public void moveFromWasteToTableau(int waste, int column) {
+        Card wasteCard = this.waste[waste];
+        if (wasteCard == null) {
+            return;
+        }
+        if (isMovableToTableau(wasteCard, column)) {
+            this.tableau[column].push(wasteCard);
+            this.waste[waste] = null;
+        }
+    }
+
+    public void moveFromTableauToTableau(int from, int to) {
+        Card card = this.tableau[from].peek();
+        if (card == null) {
+            return;
+        }
+        if (isMovableToTableau(card, to)) {
+            this.tableau[to].push(this.tableau[from].pop());
+        }
+    }
+
 }
